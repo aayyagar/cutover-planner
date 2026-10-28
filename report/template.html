@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phishing-Resistant Cutover Plan</title>
+<meta name="description" content="Readiness, blockers and a wave-by-wave rollout plan for passkeys and Token Protection in Microsoft Entra ID.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the lock-out headline first, readiness by persona and the fix list, then the programme as a
+   timeline (one lane per wave, comms dots, enforcement diamonds), wave cards, calendar and the people table. */
+:root{
+  --bg:#F4F6FA; --surface:#FFFFFF; --ink:#151A2C; --muted:#5B6278; --line:#DCE2EC;
+  --accent:#0A66C8; --accent-soft:#E3EFFC;
+  --ready:#1E8A5A; --reg:#D9A21A; --key:#6B4FD8; --blocked:#C2362B; --out:#9AA3B5;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1322; --surface:#161C2E; --ink:#E9EDF5; --muted:#9AA3BA; --line:#283149; --accent:#4C9BFF; --accent-soft:#132A47;
+  --ready:#4CC38A; --reg:#E8C04F; --key:#A792FF; --blocked:#FF6B5E; --out:#5C667E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1322; --surface:#161C2E; --ink:#E9EDF5; --muted:#9AA3BA; --line:#283149; --accent:#4C9BFF; --accent-soft:#132A47;
+  --ready:#4CC38A; --reg:#E8C04F; --key:#A792FF; --blocked:#FF6B5E; --out:#5C667E; color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.55 var(--body)}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.label{font:500 .7rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+header.top{padding-block:28px 6px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font:600 .85rem var(--mono);color:var(--muted)}
+.brand svg{width:28px;height:28px;color:var(--accent)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(1.9rem,4.4vw,2.8rem);line-height:1.02;letter-spacing:-.025em;margin:10px 0 6px}
+h2{font:800 1.45rem var(--display);letter-spacing:-.01em;margin:38px 0 12px}
+.meta-line{color:var(--muted);font-size:.92rem;display:flex;gap:8px 16px;flex-wrap:wrap;align-items:center}
+.badge{display:inline-flex;align-items:center;gap:6px;font:500 .7rem var(--mono);letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--muted);background:var(--surface)}
+.badge.demo{border-color:var(--accent);color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;min-width:0}
+
+.hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;margin-top:22px}
+.hero h3{font:800 clamp(1.3rem,2.6vw,1.75rem)/1.2 var(--display);margin:0 0 14px;text-wrap:balance}
+.hero h3 b{color:var(--blocked)}
+.stack{display:flex;height:16px;border-radius:999px;overflow:hidden;background:var(--line);margin:6px 0 10px}
+.stack span{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.84rem;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.legend b{color:var(--ink);font-variant-numeric:tabular-nums}
+.facts{display:grid;gap:10px;margin-top:16px}
+.fact{display:flex;gap:10px;font-size:.9rem}
+.fact b{font:800 1.15rem/1.2 var(--display);min-width:3.2em;font-variant-numeric:tabular-nums}
+.tp h4{font:700 1rem var(--display);margin:0 0 4px}
+.tp p{margin:0 0 10px;color:var(--muted);font-size:.88rem}
+
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:500 .68rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.tbl{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow-x:auto}
+.mini{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line);min-width:120px}
+.mini span{display:block;height:100%}
+.fix{display:grid;gap:10px}
+.fx{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--reg);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 14px}
+.fx.hard{border-left-color:var(--blocked)}
+.fx strong{font-weight:600}
+.fx p{margin:0;color:var(--muted);font-size:.86rem;grid-column:1 / -1}
+.fx .cnt{font:700 .95rem var(--display);white-space:nowrap;text-align:right}
+.fx .cnt small{display:block;font:500 .7rem var(--mono);color:var(--muted)}
+.tag{font:600 .66rem var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:5px;margin-left:6px;vertical-align:1px}
+.tag.hard{background:color-mix(in srgb,var(--blocked) 14%,transparent);color:var(--blocked)}
+.tag.soft{background:color-mix(in srgb,var(--reg) 18%,transparent);color:color-mix(in srgb,var(--reg) 70%,var(--ink))}
+
+/* timeline */
+.tl{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px 18px;overflow-x:auto}
+.tl-inner{min-width:760px}
+.tl-axis{position:relative;height:22px;margin-left:220px;border-bottom:1px solid var(--line)}
+.tl-axis span{position:absolute;top:0;font:500 .68rem var(--mono);color:var(--muted);transform:translateX(-50%);white-space:nowrap}
+.lane{display:grid;grid-template-columns:220px minmax(0,1fr);align-items:center;border-bottom:1px dashed var(--line);min-height:40px}
+.lane:last-child{border-bottom:0}
+.lane .nm{font-size:.82rem;padding-right:10px;line-height:1.25}
+.lane .nm small{display:block;color:var(--muted);font:400 .7rem var(--mono)}
+.track{position:relative;height:40px}
+.span{position:absolute;top:18px;height:4px;border-radius:4px;background:var(--accent-soft)}
+.dot{position:absolute;top:14px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);transform:translateX(-50%)}
+.enf{position:absolute;top:11px;width:18px;height:18px;background:var(--ready);transform:translateX(-50%) rotate(45deg);border-radius:3px;border:2px solid var(--surface)}
+.enf-l{position:absolute;top:-2px;font:600 .66rem var(--mono);color:var(--ready);transform:translateX(8px);white-space:nowrap}
+.today{position:absolute;top:0;bottom:0;width:0;border-left:2px dashed var(--muted)}
+
+.waves{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.wave{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:8px;min-width:0}
+.wave .wh{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.wave .no{font:700 .72rem var(--mono);color:var(--accent)}
+.wave h3{margin:0;font:700 1.02rem var(--display)}
+.wave .date{font:800 1.3rem var(--display);font-variant-numeric:tabular-nums}
+.wave dl{display:grid;grid-template-columns:120px minmax(0,1fr);gap:4px 10px;margin:0;font-size:.84rem}
+.wave dt{color:var(--muted)}
+.wave dd{margin:0;overflow-wrap:anywhere}
+
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.toolbar select,.toolbar input{font:500 .85rem var(--body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+.toolbar input{width:min(260px,100%)}
+.st{font:600 .68rem var(--mono);padding:2px 8px;border-radius:999px;white-space:nowrap}
+.st.Ready{background:color-mix(in srgb,var(--ready) 15%,transparent);color:var(--ready)}
+.st.NeedsRegistration{background:color-mix(in srgb,var(--reg) 18%,transparent);color:color-mix(in srgb,var(--reg) 70%,var(--ink))}
+.st.NeedsKey{background:color-mix(in srgb,var(--key) 15%,transparent);color:var(--key)}
+.st.Blocked{background:color-mix(in srgb,var(--blocked) 14%,transparent);color:var(--blocked)}
+.more{margin-top:10px}
+.btn{font:600 .82rem var(--body);border:1px solid var(--line);border-radius:8px;padding:7px 12px;background:var(--surface);color:var(--ink);cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.files{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.files code{font:500 .76rem var(--mono);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
+footer{padding-block:30px 40px;color:var(--muted);font:400 .78rem var(--mono);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+@media (max-width:860px){.hero,.grid2{grid-template-columns:1fr}}
+@media (max-width:560px){.wave dl{grid-template-columns:1fr;gap:0}.wave dd{margin-bottom:6px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="brand">
+        <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="16" r="5"/><path d="M16 16h12M24 16v5M20 16v3"/><path d="M4 28l4-4M28 4l-4 4" opacity=".4"/></svg>
+        Cutover Planner
+      </div>
+      <h1>Phishing-resistant cutover plan</h1>
+      <div class="meta-line" id="meta"></div>
+    </div>
+    <span class="badge">Read-only assessment</span>
+  </header>
+
+  <div class="hero">
+    <div class="card" id="pr"></div>
+    <div class="card tp" id="tp"></div>
+  </div>
+
+  <h2>Readiness by persona</h2>
+  <div class="tbl"><table id="personas"></table></div>
+
+  <div class="grid2">
+    <div><h2>Fix first</h2><div class="fix" id="fix"></div></div>
+    <div><h2>Token Protection blockers</h2><div class="fix" id="tpfix"></div></div>
+  </div>
+
+  <h2>Programme timeline</h2>
+  <div class="tl"><div class="tl-inner" id="timeline"></div></div>
+  <div class="legend" style="margin-top:8px"><span><i style="background:var(--accent);border-radius:50%"></i>Communication</span><span><i style="background:var(--ready);transform:rotate(45deg)"></i>Enforcement switched on</span></div>
+
+  <h2>Waves</h2>
+  <div class="waves" id="waves"></div>
+
+  <h2>Communications calendar</h2>
+  <div class="tbl"><table id="comms"></table></div>
+  <p class="label" style="margin-top:8px">Also produced: <span class="files"><code>communications.ics</code><code>waves.csv</code><code>readiness.csv</code><code>blockers.csv</code><code>policies/W00-…json</code><code>cutover-plan.md</code></span></p>
+
+  <h2>People</h2>
+  <div class="toolbar">
+    <label class="label" for="fSt">Status</label><select id="fSt"><option value="">All</option></select>
+    <label class="label" for="fPe">Persona</label><select id="fPe"><option value="">All</option></select>
+    <input id="fQ" type="search" placeholder="Search name, department or blocker" aria-label="Search people">
+    <span class="label" id="cnt"></span>
+  </div>
+  <div class="tbl"><table id="people"></table></div>
+  <div class="more"><button class="btn" id="moreBtn" type="button">Show more</button></div>
+
+  <footer><span id="foot"></span><span>Nothing was registered, changed or sent.</span></footer>
+</div>
+<script>
+const DATA = /*__CP_DATA__*/null;
+(function(){
+  const arr = x => x == null ? [] : (Array.isArray(x) ? x : [x]);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const n = x => Number(x || 0).toLocaleString('en-US');
+  const S = DATA.Summary, waves = arr(DATA.Waves), users = arr(DATA.Users);
+  const pct = (a, b) => b ? Math.round(100 * a / b) : 0;
+  const stName = {Ready:'Ready', NeedsRegistration:'Needs registration', NeedsKey:'Needs a security key', Blocked:'Blocked by app or device'};
+  const fmtDate = d => new Date(d + 'T00:00:00').toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+
+  document.getElementById('meta').innerHTML = '<span>' + esc(DATA.Scope.Label) + '</span><span>Start ' + fmtDate(S.Start) + ' · final enforcement ' + (S.FinalEnforcement ? fmtDate(S.FinalEnforcement) : '–') + '</span>' + (DATA.Scope.Demo ? '<span class="badge demo">Demo tenant</span>' : '');
+  document.getElementById('foot').textContent = DATA.Tool + ' v' + DATA.Version + ' · MIT license';
+
+  const seg = [['Ready', S.Ready, 'var(--ready)'], ['Needs registration', S.NeedsRegistration, 'var(--reg)'], ['Needs a security key', S.NeedsKey, 'var(--key)'], ['Blocked by app or device', S.Blocked, 'var(--blocked)']];
+  document.getElementById('pr').innerHTML =
+    '<span class="label">Phishing-resistant MFA</span><h3>If you enforced it today, <b>' + n(S.LockedOutIfEnforcedToday) + ' of ' + n(S.Users) + '</b> people would be locked out.</h3>' +
+    '<div class="stack" role="img" aria-label="' + seg.map(s => s[0] + ' ' + s[1]).join(', ') + '">' + seg.filter(s => s[1]).map(s => '<span style="width:' + pct(s[1], S.Users) + '%;background:' + s[2] + '"></span>').join('') + '</div>' +
+    '<div class="legend">' + seg.map(s => '<span><i style="background:' + s[2] + '"></i>' + s[0] + ' <b>' + n(s[1]) + '</b></span>').join('') + '</div>' +
+    '<div class="facts"><div class="fact"><b>' + n(S.Using) + '</b><span>already sign in with a passkey, security key or Windows Hello</span></div>' +
+    '<div class="fact"><b>' + n(S.SingleCredential) + '</b><span>ready users have only one credential. Microsoft recommends two, so a lost phone isn\'t a lock-out.</span></div>' +
+    '<div class="fact"><b>' + n(S.Excluded.External + S.Excluded.Service + S.Excluded.BreakGlass) + '</b><span>out of scope: ' + S.Excluded.External + ' external, ' + S.Excluded.Service + ' service account' + (S.Excluded.Service === 1 ? '' : 's') + ' using user credentials, ' + S.Excluded.BreakGlass + ' break-glass</span></div></div>';
+
+  const tseg = [['Fully bound', S.TokenProtectionReady, 'var(--ready)'], ['Partly bound', S.TokenProtectionPartial, 'var(--reg)'], ['Not bound', S.TokenProtectionNotReady, 'var(--blocked)']];
+  document.getElementById('tp').innerHTML = '<span class="label">Token Protection</span><h4>' + n(S.TokenProtectionReady) + ' of ' + n(S.TokenProtectionInScope) + ' users are ready</h4>' +
+    '<p>Native Exchange, SharePoint and Teams clients on Windows, macOS and iOS, measured from the binding status Entra recorded on each sign-in.</p>' +
+    '<div class="stack">' + tseg.filter(s => s[1]).map(s => '<span style="width:' + pct(s[1], S.TokenProtectionInScope) + '%;background:' + s[2] + '"></span>').join('') + '</div>' +
+    '<div class="legend">' + tseg.map(s => '<span><i style="background:' + s[2] + '"></i>' + s[0] + ' <b>' + n(s[1]) + '</b></span>').join('') + '</div>' +
+    '<p style="margin-top:12px">' + n(S.TokenProtectionUncoveredUsers) + ' users also use Android or Linux native clients, which Token Protection doesn\'t support. Pair it with device compliance and block unknown platforms.</p>';
+
+  document.getElementById('personas').innerHTML = '<tr><th>Persona</th><th class="n">Users</th><th>Readiness</th><th class="n">Ready</th><th class="n">Register</th><th class="n">Key</th><th class="n">Blocked</th><th class="n">Token Protection</th></tr>' +
+    arr(DATA.Personas).map(p => '<tr><td>' + esc(p.Name) + '</td><td class="n">' + p.Users + '</td><td><div class="mini">' +
+      [[p.Ready, 'var(--ready)'], [p.NeedsRegistration, 'var(--reg)'], [p.NeedsKey, 'var(--key)'], [p.Blocked, 'var(--blocked)']].filter(x => x[0]).map(x => '<span style="width:' + pct(x[0], p.Users) + '%;background:' + x[1] + '"></span>').join('') +
+      '</div></td><td class="n">' + p.Ready + '</td><td class="n">' + p.NeedsRegistration + '</td><td class="n">' + p.NeedsKey + '</td><td class="n">' + p.Blocked + '</td><td class="n">' + p.TokenProtectionReady + '</td></tr>').join('');
+
+  document.getElementById('fix').innerHTML = arr(DATA.FixList).slice(0, 8).map(f => '<div class="fx' + (f.Hard ? ' hard' : '') + '"><div><strong>' + esc(f.Blocker) + '</strong><span class="tag ' + (f.Hard ? 'hard">Blocks' : 'soft">Plan for') + '</span></div><div class="cnt">' + n(f.Users) + '<small>users</small></div><p>' + esc(f.Fix) + '</p></div>').join('') || '<p class="label">No blockers found.</p>';
+  document.getElementById('tpfix').innerHTML = arr(DATA.TokenProtectionFixList).slice(0, 6).map(f => '<div class="fx"><div><strong>' + esc(f.Reason.replace(/ \[.*\]$/, '')) + '</strong>' + (/\[inferred\]/.test(f.Reason) ? '<span class="tag soft">Inferred</span>' : '<span class="tag soft">Code ' + esc((f.Reason.match(/\[(\d+)\]/) || [, ''])[1]) + '</span>') + '</div><div class="cnt">' + n(f.Users) + '<small>users</small></div><p>' + n(f.SignIns) + ' unbound sign-ins</p></div>').join('') || '<p class="label">Every in-scope sign-in is bound.</p>';
+
+  // timeline
+  const allDates = [S.Start].concat(waves.map(w => w.Enforce), waves.flatMap(w => arr(w.Comms).map(c => c.Date)));
+  const t0 = new Date(Math.min(...allDates.map(d => +new Date(d)))), t1 = new Date(Math.max(...allDates.map(d => +new Date(d))) + 7 * 864e5);
+  const X = d => (100 * (new Date(d) - t0) / (t1 - t0)).toFixed(2) + '%';
+  const months = []; const m = new Date(t0.getFullYear(), t0.getMonth() + 1, 1); while (m < t1) { months.push(new Date(m)); m.setMonth(m.getMonth() + 1); }
+  let tl = '<div class="tl-axis">' + months.map(d => '<span style="left:' + X(d) + '">' + d.toLocaleDateString('en-GB', {month:'short', year:'numeric'}) + '</span>').join('') + '</div>';
+  tl += waves.map(w => {
+    const cs = arr(w.Comms), first = cs.length ? cs[0].Date : w.Enforce;
+    return '<div class="lane"><div class="nm">' + w.Number + '. ' + esc(w.Name) + '<small>' + w.Users + ' users · ~' + w.ExpectedTickets + ' tickets</small></div><div class="track">' +
+      '<div class="span" style="left:' + X(first) + ';width:calc(' + X(w.Enforce) + ' - ' + X(first) + ')"></div>' +
+      cs.filter(c => c.Offset !== 0).map(c => '<span class="dot" style="left:' + X(c.Date) + '" title="' + esc(c.Date + ': ' + c.Title + ' (' + c.Channel + ')') + '"></span>').join('') +
+      '<span class="enf" style="left:' + X(w.Enforce) + '" title="' + esc('Enforce ' + w.Enforce) + '"></span><span class="enf-l" style="left:' + X(w.Enforce) + '">' + new Date(w.Enforce + 'T00:00:00').toLocaleDateString('en-GB', {day:'numeric', month:'short'}) + '</span></div></div>';
+  }).join('');
+  document.getElementById('timeline').innerHTML = tl;
+
+  document.getElementById('waves').innerHTML = waves.map(w => '<article class="wave"><div class="wh"><span class="no">WAVE ' + w.Number + '</span><span class="label">' + esc(w.Type) + '</span></div><h3>' + esc(w.Name) + '</h3><div class="date">' + fmtDate(w.Enforce) + '</div>' +
+    '<dl><dt>Users</dt><dd>' + w.Users + ' (' + w.Ready + ' ready, ' + w.NeedsRegistration + ' to register' + (w.NeedsKey ? ', ' + w.NeedsKey + ' need a key' : '') + ')</dd>' +
+    '<dt>Method</dt><dd>' + esc(w.Method) + '</dd><dt>Token Protection</dt><dd>' + (arr(w.TokenProtectionPlatforms).length ? w.TokenProtectionReady + ' users on ' + arr(w.TokenProtectionPlatforms).join(', ') : 'Not yet') + '</dd>' +
+    '<dt>Departments</dt><dd>' + esc(arr(w.Departments).join(', ')) + '</dd><dt>Help desk</dt><dd>~' + w.ExpectedTickets + ' extra tickets</dd>' +
+    '<dt>Policies</dt><dd><code>W' + String(w.Number).padStart(2, '0') + '-…json</code> (report-only)</dd></dl></article>').join('');
+
+  const allComms = arr(DATA.Programme).concat(waves.flatMap(w => arr(w.Comms))).sort((a, b) => a.Date < b.Date ? -1 : a.Date > b.Date ? 1 : 0);
+  document.getElementById('comms').innerHTML = '<tr><th>Date</th><th>Audience</th><th>Message</th><th>Channel</th></tr>' + allComms.map(c => '<tr><td style="white-space:nowrap">' + fmtDate(c.Date) + '</td><td>' + esc(c.Audience) + '</td><td>' + esc(c.Title) + '</td><td>' + esc(c.Channel) + '</td></tr>').join('');
+
+  const fs = document.getElementById('fSt'), fp = document.getElementById('fPe'), fq = document.getElementById('fQ');
+  Object.keys(stName).forEach(k => fs.insertAdjacentHTML('beforeend', '<option value="' + k + '">' + stName[k] + '</option>'));
+  [...new Set(users.map(u => u.Persona))].forEach(p => fp.insertAdjacentHTML('beforeend', '<option>' + esc(p) + '</option>'));
+  let limit = 40;
+  function render(){
+    const q = fq.value.trim().toLowerCase();
+    const list = users.filter(u => (!fs.value || u.Status === fs.value) && (!fp.value || u.Persona === fp.value) && (!q || (u.Upn + ' ' + u.Name + ' ' + u.Department + ' ' + u.Blockers).toLowerCase().includes(q)));
+    document.getElementById('people').innerHTML = '<tr><th>Person</th><th>Persona</th><th>Status</th><th>Phishing-resistant methods</th><th>Token Protection</th><th>Wave</th><th>Blockers</th></tr>' +
+      list.slice(0, limit).map(u => '<tr><td>' + esc(u.Name) + '<br><span class="label" style="text-transform:none;letter-spacing:0">' + esc(u.Upn) + (u.Department ? ' · ' + esc(u.Department) : '') + '</span></td><td>' + esc(u.Persona) + '</td><td><span class="st ' + u.Status + '">' + esc(stName[u.Status] || u.Status) + '</span></td><td>' + esc(u.Methods || 'none') + '</td><td>' + esc(u.TokenProtection) + '</td><td>' + esc(u.WaveName || '') + (u.Enforce ? '<br><span class="label" style="letter-spacing:0">' + esc(u.Enforce) + '</span>' : '') + '</td><td>' + esc(u.Blockers || '') + '</td></tr>').join('');
+    document.getElementById('cnt').textContent = Math.min(limit, list.length) + ' of ' + list.length;
+    document.getElementById('moreBtn').hidden = list.length <= limit;
+  }
+  [fs, fp].forEach(e => e.addEventListener('change', () => { limit = 40; render(); }));
+  fq.addEventListener('input', () => { limit = 40; render(); });
+  document.getElementById('moreBtn').addEventListener('click', () => { limit += 80; render(); });
+  render();
+})();
+</script>
+</body>
+</html>
